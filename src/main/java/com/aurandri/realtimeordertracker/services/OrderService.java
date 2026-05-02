@@ -9,6 +9,8 @@ import com.aurandri.realtimeordertracker.dto.UpdateOrderDTO;
 import com.aurandri.realtimeordertracker.entities.CustomerEntity;
 import com.aurandri.realtimeordertracker.entities.OrderEntity;
 import com.aurandri.realtimeordertracker.entities.OrderStatus;
+import com.aurandri.realtimeordertracker.kafka.KafkaProducerService;
+import com.aurandri.realtimeordertracker.kafka.OrderEvent;
 import com.aurandri.realtimeordertracker.repositories.CustomerRepository;
 import com.aurandri.realtimeordertracker.repositories.OrderRepository;
 import org.springframework.transaction.annotation.Transactional;
@@ -27,6 +29,9 @@ public class OrderService {
 
     @Autowired
     private CustomerRepository customerRepository;
+
+    @Autowired
+    private KafkaProducerService kafkaProducerService;
 
     @Autowired
     ObjectMapper objectMapper;
@@ -54,7 +59,13 @@ public class OrderService {
         order.setItems(createOrderDTO.getItems().toString());
         order.setStatus(OrderStatus.PENDING);
 
-        return orderRepository.save(order);
+        OrderEntity saved = orderRepository.save(order);
+        // Publish setelah DB commit
+        kafkaProducerService.publishOrderEvent(
+                OrderEvent.of(saved.getId(), null, OrderStatus.PENDING)
+        );
+
+        return saved;
     }
 
     // Update ORDER
@@ -76,11 +87,18 @@ public class OrderService {
         OrderEntity order = orderRepository.findById(updateOrderDTO.getOrderId())
                 .orElseThrow(() -> new OrderNotFoundException(updateOrderDTO.getOrderId()));
 
-        // check user input
         validateTransition(order.getStatus(), updateOrderDTO.getStatus());
 
+        OrderStatus previousStatus = order.getStatus();
         order.setStatus(updateOrderDTO.getStatus());
-        return orderRepository.save(order);
+        OrderEntity saved = orderRepository.save(order);
+
+        // Publish setelah DB commit
+        kafkaProducerService.publishOrderEvent(
+                OrderEvent.of(saved.getId(), previousStatus, updateOrderDTO.getStatus())
+        );
+
+        return saved;
     }
 
 }
