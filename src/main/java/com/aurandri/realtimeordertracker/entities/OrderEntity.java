@@ -8,6 +8,7 @@ import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import java.util.Date;
+import java.util.UUID;
 
 @Entity
 @Table(name = "orders")
@@ -37,6 +38,5 @@ public class OrderEntity {
     @UpdateTimestamp
     @JsonFormat(pattern = "hh:mm a dd/MMM/yyyy", timezone = "Asia/Jakarta")
     private Date updatedAt;
-
 
 }

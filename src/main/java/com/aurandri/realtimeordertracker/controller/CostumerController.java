@@ -19,20 +19,11 @@ public class CostumerController {
     // Create Customer
     @PostMapping("/create-customer")
     public ResponseEntity<Resp<CustomerEntity>> createCustomer(@RequestBody @Valid CreateCustomerDTO createCustomerDTO) {
-        try {
-            CustomerEntity data = costumerService.createCustomer(createCustomerDTO);
+        CustomerEntity data = costumerService.createCustomer(createCustomerDTO);
+        Resp<CustomerEntity> response = new Resp<>();
+        response.setCode(HttpStatus.OK.value());
+        response.setData(data);
 
-            Resp<CustomerEntity> response = new Resp<>();
-            response.setCode(HttpStatus.OK.value());
-            response.setData(data);
-
-            return ResponseEntity.ok(response);
-        } catch (Exception e){
-            Resp<CustomerEntity> response = new Resp<>();
-            response.setCode(HttpStatus.INTERNAL_SERVER_ERROR.value());
-            response.setData(null);
-
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
-        }
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 }
