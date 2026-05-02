@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Order Tracker</title>
+
+    <!-- Bootstrap -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- jQuery -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+</head>
+<body class="container mt-4">
+
+<h2>🍽️ Create Order</h2>
+
+<div class="card p-3 mb-4">
+    <div class="mb-2">
+        <label>Customer ID</label>
+        <input type="number" id="customerId" class="form-control" value="1">
+    </div>
+
+    <div class="mb-2">
+        <label>Items (pisahkan dengan koma)</label>
+        <input type="text" id="items" class="form-control" placeholder="Nasi Goreng, Es Teh">
+    </div>
+
+    <button class="btn btn-primary" id="btnCreate">Create Order</button>
+</div>
+
+<hr>
+
+<h2>📦 Order List</h2>
+
+<table class="table table-bordered">
+    <thead>
+    <tr>
+        <th>ID</th>
+        <th>Customer</th>
+        <th>Items</th>
+        <th>Status</th>
+        <th>Created At</th>
+    </tr>
+    </thead>
+    <tbody id="orderTable"></tbody>
+</table>
+
+<script>
+
+    let eventSources = {}; // simpan SSE per orderId
+
+    // =========================
+    // LOAD ALL ORDERS
+    // =========================
+    function loadOrders() {
+        $.get("http://localhost:8081/api/orders", function (res) {
+            let rows = "";
+
+            res.data.forEach(order => {
+
+                rows += `
+                    <tr id="order-${order.id}">
+                        <td>${order.id}</td>
+                        <td>${order.customer.customerName}</td>
+                        <td>${order.items}</td>
+                        <td class="status">${order.status}</td>
+                        <td>${order.createdAt}</td>
+                    </tr>
+                `;
+
+                // subscribe SSE kalau belum
+                subscribeSSE(order.id);
+            });
+
+            $("#orderTable").html(rows);
+        });
+    }
+
+    // =========================
+    // CREATE ORDER
+    // =========================
+    $("#btnCreate").click(function () {
+
+        let itemsInput = $("#items").val();
+
+        let payload = {
+            customerId: parseInt($("#customerId").val()),
+            items: itemsInput.split(",").map(i => i.trim())
+        };
+
+        $.ajax({
+            url: "http://localhost:8081/api/orders/create-order",
+            type: "POST",
+            contentType: "application/json",
+            data: JSON.stringify(payload),
+            success: function () {
+                alert("Order created!");
+                loadOrders(); // reload list
+            }
+        });
+    });
+
+    // =========================
+    // SSE SUBSCRIBE
+    // =========================
+    function subscribeSSE(orderId) {
+
+        if (eventSources[orderId]) return; // biar ga double
+
+        let eventSource = new EventSource(`http://localhost:8081/orders/${orderId}/stream`);
+
+        eventSource.addEventListener("order-status", function (event) {
+
+            let data = JSON.parse(event.data);
+
+            console.log("Realtime Update:", data);
+
+            // update status di table
+            $(`#order-${data.orderId} .status`).text(data.status);
+
+        });
+
+        eventSource.onerror = function () {
+            console.log("SSE error for order " + orderId);
+            eventSource.close();
+        };
+
+        eventSources[orderId] = eventSource;
+    }
+
+    // =========================
+    // INIT
+    // =========================
+    $(document).ready(function () {
+        loadOrders();
+    });
+
+</script>
+
+</body>
+</html>
