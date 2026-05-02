@@ -1,5 +1,6 @@
 package com.aurandri.realtimeordertracker.kafka;
 
+import com.aurandri.realtimeordertracker.controller.SseController;
 import com.aurandri.realtimeordertracker.entities.OrderEntity;
 import com.aurandri.realtimeordertracker.entities.OrderStatus;
 import com.aurandri.realtimeordertracker.repositories.OrderRepository;
@@ -20,6 +21,7 @@ public class KafkaConsumerService {
 
     private final OrderRepository orderRepository;
     private final KafkaProducerService kafkaProducerService;
+    private final SseController sseController;
 
     @KafkaListener(
             topics = "${app.kafka.topic.order-events}",
@@ -57,18 +59,28 @@ public class KafkaConsumerService {
             return;
         }
 
-        // Validasi status saat ini sesuai event
         if (!order.getStatus().equals(event.getCurrentStatus())) {
             log.warn("Order {} status mismatch. DB={}, Event={}. Skipping.",
                     event.getOrderId(), order.getStatus(), event.getCurrentStatus());
             return;
         }
 
+        // [Debug] Jeda antar transisi
+        try {
+            log.info("Order {} waiting 5s before transitioning from {}...", event.getOrderId(), event.getCurrentStatus());
+            Thread.sleep(5000);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            log.warn("Sleep interrupted for orderId={}", event.getOrderId());
+        }
+
         order.setStatus(nextStatus);
         orderRepository.save(order);
         log.info("Order {} transitioned: {} -> {}", event.getOrderId(), event.getCurrentStatus(), nextStatus);
 
-        // Publish event untuk status berikutnya
+        // Push ke SSE
+        sseController.pushStatusUpdate(order.getId(), nextStatus.name());
+
         kafkaProducerService.publishOrderEvent(
                 OrderEvent.of(order.getId(), event.getCurrentStatus(), nextStatus)
         );
