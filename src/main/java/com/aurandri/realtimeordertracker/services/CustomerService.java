@@ -1,19 +1,27 @@
 package com.aurandri.realtimeordertracker.services;
 
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
 import com.aurandri.realtimeordertracker.dto.CreateCustomerDTO;
 import com.aurandri.realtimeordertracker.entities.CustomerEntity;
 import com.aurandri.realtimeordertracker.repositories.CustomerRepository;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
 
 @Service
 public class CustomerService {
     @Autowired private CustomerRepository customerRepository;
 
-    // Create
-    public CustomerEntity createCustomer(CreateCustomerDTO createCustomerDTO) {
+    public CustomerEntity createCustomer(CreateCustomerDTO dto) {
+
+        Boolean isExist = customerRepository.existsByEmail(dto.getEmail());
+
+        if (Boolean.TRUE.equals(isExist)) {
+            return null;
+        }
+
         CustomerEntity customer = new CustomerEntity();
-        customer.setCustomerName(createCustomerDTO.getCustomerName());
+        customer.setCustomerName(dto.getCustomerName());
+        customer.setEmail(dto.getEmail());
 
         return customerRepository.save(customer);
     }

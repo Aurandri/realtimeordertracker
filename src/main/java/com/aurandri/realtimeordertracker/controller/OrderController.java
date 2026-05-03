@@ -1,18 +1,27 @@
 package com.aurandri.realtimeordertracker.controller;
 
-import com.aurandri.realtimeordertracker.CustomHandling.Resp;
-import com.aurandri.realtimeordertracker.dto.CreateOrderDTO;
-import com.aurandri.realtimeordertracker.dto.OrderRequestDTO;
-import com.aurandri.realtimeordertracker.dto.UpdateOrderDTO;
-import com.aurandri.realtimeordertracker.entities.OrderEntity;
-import com.aurandri.realtimeordertracker.services.OrderService;
-import jakarta.validation.Valid;
+import java.util.List;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
-import java.util.List;
+import com.aurandri.realtimeordertracker.CustomHandling.Resp;
+import com.aurandri.realtimeordertracker.dto.CreateOrderDTO;
+import com.aurandri.realtimeordertracker.dto.UpdateOrderDTO;
+import com.aurandri.realtimeordertracker.entities.OrderEntity;
+import com.aurandri.realtimeordertracker.entities.OrderStatus;
+import com.aurandri.realtimeordertracker.services.OrderService;
+
+import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/api/orders")
@@ -31,9 +40,20 @@ public class OrderController {
         return ResponseEntity.ok(response);
     }
 
+    @GetMapping("/{id}")
+    public ResponseEntity<Resp<OrderEntity>> getOrderById(@PathVariable Long id) {
+        OrderEntity data = orderService.getOrderById(id);
+
+        Resp<OrderEntity> response = new Resp<>();
+        response.setCode(HttpStatus.OK.value());
+        response.setData(data);
+
+        return ResponseEntity.ok(response);
+    }
+
     @GetMapping("/status")
-    public ResponseEntity<Resp<List<OrderEntity>>> getAllOrderByStatus(@RequestBody @Valid OrderRequestDTO orderRequestDTO) {
-        List<OrderEntity> data = orderService.getOrderByStatus(orderRequestDTO);
+    public ResponseEntity<Resp<List<OrderEntity>>> getAllOrderByStatus(@RequestParam OrderStatus status) {
+        List<OrderEntity> data = orderService.getOrderByStatus(status);
 
         Resp<List<OrderEntity>> response = new Resp<>();
         response.setCode(HttpStatus.OK.value());

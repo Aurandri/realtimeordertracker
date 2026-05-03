@@ -1,141 +1,519 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>Order Tracker</title>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Order Tracker</title>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"/>
+  <style>
+    :root {
+      --bg:#0d0d0d; --surface:#161616; --surface2:#1f1f1f; --border:#2a2a2a;
+      --accent:#00e5a0; --accent2:#00b37e; --text:#f0f0f0; --muted:#666;
+      --danger:#ff4d6d; --warn:#ffd166; --info:#4cc9f0;
+    }
+    *{box-sizing:border-box;margin:0;padding:0;}
+    body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min-height:100vh;}
 
-    <!-- Bootstrap -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    header{border-bottom:1px solid var(--border);padding:1.25rem 2rem;display:flex;align-items:center;gap:1rem;position:sticky;top:0;background:rgba(13,13,13,.95);backdrop-filter:blur(8px);z-index:100;}
+    .logo{font-family:'Space Mono',monospace;font-size:1.1rem;color:var(--accent);}
+    .logo span{color:var(--muted);}
+    .live-dot{width:8px;height:8px;background:var(--accent);border-radius:50%;animation:pulse 1.8s infinite;margin-left:auto;}
+    .live-label{font-family:'Space Mono',monospace;font-size:.7rem;color:var(--accent);letter-spacing:2px;}
+    @keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.4;transform:scale(.85)}}
 
-    <!-- jQuery -->
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    .main{display:grid;grid-template-columns:340px 1fr;min-height:calc(100vh - 65px);}
+    .left-panel{border-right:1px solid var(--border);padding:2rem 1.5rem;display:flex;flex-direction:column;gap:1.5rem;overflow-y:auto;}
+    .right-panel{padding:2rem;display:flex;flex-direction:column;gap:1.5rem;overflow-y:auto;}
+
+    .panel-title{font-family:'Space Mono',monospace;font-size:.7rem;color:var(--muted);letter-spacing:3px;text-transform:uppercase;margin-bottom:.25rem;}
+
+    .tab-row{display:flex;gap:4px;border-bottom:1px solid var(--border);margin-bottom:1.25rem;}
+    .tab-btn{background:none;border:none;color:var(--muted);font-family:'Space Mono',monospace;font-size:.7rem;letter-spacing:1.5px;padding:.5rem 1rem;cursor:pointer;border-bottom:2px solid transparent;transition:all .2s;}
+    .tab-btn.active{color:var(--accent);border-bottom-color:var(--accent);}
+    .tab-pane{display:none;}
+    .tab-pane.active{display:flex;flex-direction:column;gap:1rem;}
+
+    .card-form{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:1.25rem;display:flex;flex-direction:column;gap:1rem;}
+    .form-label{font-size:.78rem;color:var(--muted);margin-bottom:4px;display:block;}
+    .form-control{background:var(--surface2)!important;border:1px solid var(--border)!important;color:var(--text)!important;border-radius:8px!important;font-size:.88rem;padding:.6rem .85rem;transition:border-color .2s;}
+    .form-control:focus{border-color:var(--accent)!important;box-shadow:0 0 0 2px rgba(0,229,160,.1)!important;outline:none;}
+    .form-control::placeholder{color:var(--muted);}
+    .form-control.is-invalid{border-color:var(--danger)!important;}
+    .invalid-feedback{font-size:.75rem;color:var(--danger);margin-top:4px;}
+
+    .items-container{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:.5rem;min-height:76px;display:flex;flex-wrap:wrap;gap:6px;cursor:text;transition:border-color .2s;}
+    .items-container:focus-within{border-color:var(--accent);}
+    .tag{background:rgba(0,229,160,.12);border:1px solid rgba(0,229,160,.3);color:var(--accent);border-radius:6px;padding:3px 10px;font-size:.8rem;display:flex;align-items:center;gap:6px;animation:tagIn .15s ease;}
+    @keyframes tagIn{from{opacity:0;transform:scale(.85)}to{opacity:1;transform:scale(1)}}
+    .tag-remove{cursor:pointer;color:var(--accent2);font-size:.9rem;opacity:.7;}
+    .tag-remove:hover{opacity:1;}
+    #item-input{background:transparent;border:none;outline:none;color:var(--text);font-size:.85rem;flex:1;min-width:100px;padding:4px 6px;}
+    .hint{font-size:.72rem;color:var(--muted);}
+
+    .btn-primary-custom{background:var(--accent);color:#0d0d0d;border:none;border-radius:8px;font-weight:600;font-size:.88rem;padding:.65rem 1rem;cursor:pointer;transition:background .2s,transform .1s;font-family:'DM Sans',sans-serif;width:100%;}
+    .btn-primary-custom:hover{background:var(--accent2);}
+    .btn-primary-custom:active{transform:scale(.98);}
+    .btn-primary-custom:disabled{opacity:.5;cursor:not-allowed;}
+
+    .filter-row{display:flex;gap:6px;flex-wrap:wrap;}
+    .filter-btn{background:var(--surface2);border:1px solid var(--border);color:var(--muted);border-radius:20px;font-family:'Space Mono',monospace;font-size:.65rem;letter-spacing:1px;padding:4px 14px;cursor:pointer;transition:all .2s;user-select:none;}
+    .filter-btn[data-status="ALL"].active{background:rgba(240,240,240,.1);border-color:var(--text);color:var(--text);}
+    .filter-btn[data-status="PENDING"].active{background:rgba(255,209,102,.12);border-color:rgba(255,209,102,.5);color:var(--warn);}
+    .filter-btn[data-status="PROCESSING"].active{background:rgba(76,201,240,.12);border-color:rgba(76,201,240,.5);color:var(--info);}
+    .filter-btn[data-status="SHIPPED"].active{background:rgba(0,229,160,.1);border-color:rgba(0,229,160,.4);color:var(--accent);}
+    .filter-btn[data-status="DELIVERED"].active{background:rgba(0,229,160,.18);border-color:var(--accent2);color:var(--accent);}
+
+    .orders-header{display:flex;align-items:center;justify-content:space-between;}
+    .order-count{font-family:'Space Mono',monospace;font-size:.75rem;color:var(--muted);}
+
+    .order-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:1.25rem 1.5rem;transition:border-color .3s;animation:cardIn .3s ease;}
+    @keyframes cardIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+    .order-card.updating{border-color:var(--accent);}
+
+    .order-top{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:1rem;}
+    .order-id{font-family:'Space Mono',monospace;font-size:.78rem;color:var(--muted);}
+    .order-customer{font-size:1rem;font-weight:600;color:var(--text);margin-top:2px;}
+    .order-email{font-size:.78rem;color:var(--muted);margin-top:1px;}
+
+    .status-badge{font-family:'Space Mono',monospace;font-size:.68rem;letter-spacing:1.5px;padding:4px 12px;border-radius:20px;font-weight:700;text-transform:uppercase;transition:all .4s ease;}
+    .status-PENDING{background:rgba(255,209,102,.12);color:var(--warn);border:1px solid rgba(255,209,102,.3);}
+    .status-PROCESSING{background:rgba(76,201,240,.12);color:var(--info);border:1px solid rgba(76,201,240,.3);}
+    .status-SHIPPED{background:rgba(0,229,160,.1);color:var(--accent);border:1px solid rgba(0,229,160,.3);}
+    .status-DELIVERED{background:rgba(0,229,160,.18);color:var(--accent);border:1px solid var(--accent2);}
+
+    .order-progress{display:flex;gap:4px;margin-bottom:1rem;}
+    .progress-step{flex:1;height:3px;background:var(--border);border-radius:2px;transition:background .5s ease;}
+    .progress-step.active{background:var(--accent);}
+    .progress-step.partial{background:var(--warn);}
+
+    .order-meta{display:flex;gap:1.5rem;flex-wrap:wrap;}
+    .meta-item{font-size:.8rem;color:var(--muted);}
+    .meta-item strong{color:var(--text);font-weight:500;}
+    .order-items{display:flex;flex-wrap:wrap;gap:5px;margin-top:.75rem;}
+    .item-chip{background:var(--surface2);border:1px solid var(--border);color:var(--muted);font-size:.75rem;padding:2px 10px;border-radius:5px;}
+
+    .empty-state{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:4rem;color:var(--muted);gap:.75rem;border:1px dashed var(--border);border-radius:12px;}
+    .empty-icon{font-size:2.5rem;opacity:.4;}
+    .empty-text{font-size:.88rem;}
+
+    #toast-area{position:fixed;bottom:1.5rem;right:1.5rem;z-index:999;display:flex;flex-direction:column;gap:8px;}
+    .toast-msg{background:var(--surface2);border:1px solid var(--border);border-left:3px solid var(--accent);color:var(--text);padding:.75rem 1.1rem;border-radius:8px;font-size:.83rem;animation:slideUp .2s ease;max-width:300px;}
+    .toast-msg.error{border-left-color:var(--danger);}
+    @keyframes slideUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+
+    ::-webkit-scrollbar{width:4px;}
+    ::-webkit-scrollbar-track{background:transparent;}
+    ::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px;}
+
+    @media(max-width:768px){
+      .main{grid-template-columns:1fr;}
+      .left-panel{border-right:none;border-bottom:1px solid var(--border);}
+    }
+  </style>
 </head>
-<body class="container mt-4">
+<body>
 
-<h2>🍽️ Create Order</h2>
+<header>
+  <div class="logo">order<span>/</span>tracker</div>
+  <div style="display:flex;align-items:center;gap:8px;">
+    <div class="live-dot"></div>
+    <span class="live-label">LIVE</span>
+  </div>
+</header>
 
-<div class="card p-3 mb-4">
-    <div class="mb-2">
-        <label>Customer ID</label>
-        <input type="number" id="customerId" class="form-control" value="1">
+<div class="main">
+  <div class="left-panel">
+    <div class="tab-row">
+      <button class="tab-btn active" data-tab="tab-order">NEW ORDER</button>
+      <button class="tab-btn" data-tab="tab-customer">CUSTOMER</button>
     </div>
 
-    <div class="mb-2">
-        <label>Items (pisahkan dengan koma)</label>
-        <input type="text" id="items" class="form-control" placeholder="Nasi Goreng, Es Teh">
+    <div class="tab-pane active" id="tab-order">
+      <div class="card-form">
+        <div>
+          <label class="form-label">Customer Email</label>
+          <input type="email" id="customerEmail" class="form-control" placeholder="customer@email.com"/>
+          <div class="invalid-feedback" id="email-order-err"></div>
+        </div>
+        <div>
+          <label class="form-label">Items</label>
+          <div class="items-container" id="items-container" onclick="document.getElementById('item-input').focus()">
+            <input type="text" id="item-input" placeholder="Type item, press Enter..."/>
+          </div>
+          <div class="hint mt-1">Press Enter or comma to add item</div>
+        </div>
+        <button class="btn-primary-custom" id="btn-create" onclick="createOrder()">Create Order</button>
+      </div>
     </div>
 
-    <button class="btn btn-primary" id="btnCreate">Create Order</button>
+    <div class="tab-pane" id="tab-customer">
+      <div class="card-form">
+        <div>
+          <label class="form-label">Customer Name</label>
+          <input type="text" id="customerName" class="form-control" placeholder="John Doe"/>
+        </div>
+        <div>
+          <label class="form-label">Email</label>
+          <input type="email" id="customerEmailNew" class="form-control" placeholder="john@email.com"/>
+          <div class="invalid-feedback" id="email-customer-err"></div>
+        </div>
+        <button class="btn-primary-custom" id="btn-add-customer" onclick="createCustomer()">Add Customer</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="right-panel">
+    <div class="orders-header">
+      <div class="panel-title">Orders</div>
+      <div class="order-count" id="order-count">— orders</div>
+    </div>
+
+    <div class="filter-row">
+      <span class="filter-btn active" data-status="ALL">ALL</span>
+      <span class="filter-btn" data-status="PENDING">PENDING</span>
+      <span class="filter-btn" data-status="PROCESSING">PROCESSING</span>
+      <span class="filter-btn" data-status="SHIPPED">SHIPPED</span>
+      <span class="filter-btn" data-status="DELIVERED">DELIVERED</span>
+    </div>
+
+    <div id="orders-list"></div>
+  </div>
 </div>
 
-<hr>
+<div id="toast-area"></div>
 
-<h2>📦 Order List</h2>
-
-<table class="table table-bordered">
-    <thead>
-    <tr>
-        <th>ID</th>
-        <th>Customer</th>
-        <th>Items</th>
-        <th>Status</th>
-        <th>Created At</th>
-    </tr>
-    </thead>
-    <tbody id="orderTable"></tbody>
-</table>
-
+<script src="https://cdn.jsdelivr.net/npm/jquery@3.7.1/dist/jquery.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script>
+  const API = '/api';
+  const items = [];
+  const sseConnections = {};
+  let currentFilter = 'ALL';
 
-    let eventSources = {}; // simpan SSE per orderId
+  // ── TABS ───────────────────────────────────────────────────────
+  $('.tab-btn').on('click', function() {
+    $('.tab-btn').removeClass('active');
+    $('.tab-pane').removeClass('active');
+    $(this).addClass('active');
+    $('#' + $(this).data('tab')).addClass('active');
+  });
 
-    // =========================
-    // LOAD ALL ORDERS
-    // =========================
-    function loadOrders() {
-        $.get("http://localhost:8081/api/orders", function (res) {
-            let rows = "";
+  // ── TAG INPUT ──────────────────────────────────────────────────
+  $('#item-input').on('keydown', function(e) {
+    if (e.key === 'Enter' || e.key === ',') {
+      e.preventDefault();
+      const val = $(this).val().trim().replace(/,$/, '');
+      if (val) addItem(val);
+      $(this).val('');
+    }
+  });
 
-            res.data.forEach(order => {
+  function addItem(name) {
+    if (!name || items.includes(name)) return;
+    items.push(name);
+    const tag = $('<span class="tag"></span>').text(name);
+    const rm = $('<span class="tag-remove">×</span>').on('click', function() {
+      const idx = items.indexOf(name);
+      if (idx > -1) items.splice(idx, 1);
+      tag.remove();
+    });
+    tag.append(rm);
+    $('#items-container').append(tag);
+  }
 
-                rows += `
-                    <tr id="order-${order.id}">
-                        <td>${order.id}</td>
-                        <td>${order.customer.customerName}</td>
-                        <td>${order.items}</td>
-                        <td class="status">${order.status}</td>
-                        <td>${order.createdAt}</td>
-                    </tr>
-                `;
+  // ── EMAIL VALIDATION ───────────────────────────────────────────
+  function isValidEmail(email) {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  }
 
-                // subscribe SSE kalau belum
-                subscribeSSE(order.id);
-            });
+  // ── CREATE CUSTOMER ────────────────────────────────────────────
+  function createCustomer() {
+    const name  = $('#customerName').val().trim();
+    const email = $('#customerEmailNew').val().trim();
 
-            $("#orderTable").html(rows);
+    $('#customerEmailNew').removeClass('is-invalid');
+    $('#email-customer-err').text('');
+
+    if (!name) return showToast('Nama customer harus diisi', true);
+    if (!email) {
+      $('#customerEmailNew').addClass('is-invalid');
+      $('#email-customer-err').text('Email harus diisi');
+      return;
+    }
+    if (!isValidEmail(email)) {
+      $('#customerEmailNew').addClass('is-invalid');
+      $('#email-customer-err').text('Format email tidak valid (contoh: nama@domain.com)');
+      return;
+    }
+
+    $('#btn-add-customer').prop('disabled', true).text('Adding...');
+
+    $.ajax({
+      url: `${API}/customer/create-customer`,
+      method: 'POST',
+      contentType: 'application/json',
+      data: JSON.stringify({ customerName: name, email }),
+      success: function(res) {
+        if (res.code === 200 || res.code === 201) {
+          showToast('Customer ' + name + ' berhasil ditambahkan!');
+          $('#customerName').val('');
+          $('#customerEmailNew').val('');
+        } else {
+          showToast(res.data || 'Gagal menambahkan customer', true);
+        }
+      },
+      error: function(xhr) {
+        const msg = xhr.responseJSON?.message || xhr.responseJSON?.data || 'Gagal menambahkan customer';
+        if (msg.toLowerCase().includes('email')) {
+          $('#customerEmailNew').addClass('is-invalid');
+          $('#email-customer-err').text(msg);
+        } else {
+          showToast(msg, true);
+        }
+      },
+      complete: function() {
+        $('#btn-add-customer').prop('disabled', false).text('Add Customer');
+      }
+    });
+  }
+
+  // ── CREATE ORDER ───────────────────────────────────────────────
+  function createOrder() {
+    const email = $('#customerEmail').val().trim();
+
+    $('#customerEmail').removeClass('is-invalid');
+    $('#email-order-err').text('');
+
+    if (!email) {
+      $('#customerEmail').addClass('is-invalid');
+      $('#email-order-err').text('Email harus diisi');
+      return;
+    }
+    if (!isValidEmail(email)) {
+      $('#customerEmail').addClass('is-invalid');
+      $('#email-order-err').text('Format email tidak valid (contoh: nama@domain.com)');
+      return;
+    }
+    if (items.length === 0) return showToast('Tambahkan minimal 1 item', true);
+
+    $('#btn-create').prop('disabled', true).text('Creating...');
+
+    $.ajax({
+      url: `${API}/orders/create-order`,
+      method: 'POST',
+      contentType: 'application/json',
+      data: JSON.stringify({ customerEmail: email, items: [...items] }),
+      success: function(res) {
+        if (res.code === 200 || res.code === 201) {
+          showToast('Order #' + res.data.id + ' created!');
+          items.length = 0;
+          $('#items-container .tag').remove();
+          $('#customerEmail').val('');
+          // Reload dengan filter aktif
+          loadOrders(currentFilter);
+        } else {
+          showToast(res.message || 'Gagal membuat order', true);
+        }
+      },
+      error: function(xhr) {
+        const msg = xhr.responseJSON?.message || 'Gagal membuat order';
+        if (msg.toLowerCase().includes('customer') || msg.toLowerCase().includes('email')) {
+          $('#customerEmail').addClass('is-invalid');
+          $('#email-order-err').text('Customer dengan email ini tidak ditemukan');
+        } else {
+          showToast(msg, true);
+        }
+      },
+      complete: function() {
+        $('#btn-create').prop('disabled', false).text('Create Order');
+      }
+    });
+  }
+
+  // ── FILTER ─────────────────────────────────────────────────────
+$('.filter-btn').on('click', function() {
+    const status = $(this).data('status');
+    if (status === currentFilter) return;
+
+    currentFilter = status;
+    $('.filter-btn').removeClass('active');
+    $(this).addClass('active');
+
+    // Tidak closeAllSSE — biarkan SSE tetap jalan
+    loadOrders(currentFilter);
+});
+
+  // ── LOAD ORDERS ────────────────────────────────────────────────
+function loadOrders(filter) {
+    const url = (filter && filter !== 'ALL')
+      ? `${API}/orders/status?status=${filter}`
+      : `${API}/orders`;
+
+    $.get(url, function(res) {
+      if (res.code !== 200) return;
+      renderOrders(res.data || []);
+    });
+}
+
+function renderOrders(orders) {
+    const container = $('#orders-list');
+    container.empty();
+
+    if (orders.length === 0) {
+      container.html('<div class="empty-state"><div class="empty-icon">📦</div><div class="empty-text">No orders found.</div></div>');
+      updateCount();
+      return;
+    }
+
+    orders.sort((a, b) => b.id - a.id);
+    orders.forEach(order => {
+      container.append(buildOrderCard(order));
+      // Subscribe hanya kalau belum ada koneksi
+      subscribeSSE(order.id, order.status);
+    });
+
+    updateCount();
+}
+
+  // ── BUILD CARD ─────────────────────────────────────────────────
+  function buildOrderCard(order) {
+    const steps = ['PENDING','PROCESSING','SHIPPED','DELIVERED'];
+    const currentIdx = steps.indexOf(order.status);
+
+    const progressHtml = steps.map((s, i) => {
+      const cls = i < currentIdx ? 'active' : (i === currentIdx ? 'partial' : '');
+      return '<div class="progress-step ' + cls + '"></div>';
+    }).join('');
+
+    let itemsArr = [];
+    try {
+      const raw = (order.items || '').toString().trim();
+      if (raw.startsWith('[') && raw.endsWith(']')) {
+        itemsArr = raw.slice(1,-1).split(',').map(s => s.trim().replace(/^["']|["']$/g,''));
+      }
+    } catch(e){}
+
+    const itemChips = itemsArr.map(i => '<span class="item-chip">' + i + '</span>').join('');
+    const customerEmail = order.customer?.email
+      ? '<div class="order-email">' + order.customer.email + '</div>' : '';
+
+    return `
+      <div class="order-card mb-3" id="order-card-${order.id}">
+        <div class="order-top">
+          <div>
+            <div class="order-id">#${String(order.id).padStart(4,'0')}</div>
+            <div class="order-customer">${order.customer?.customerName || 'Unknown'}</div>
+            ${customerEmail}
+          </div>
+          <span class="status-badge status-${order.status}" id="status-${order.id}">${order.status}</span>
+        </div>
+        <div class="order-progress">${progressHtml}</div>
+        <div class="order-items">${itemChips}</div>
+        <div class="order-meta mt-2">
+          <div class="meta-item">Created <strong>${order.createdAt}</strong></div>
+          <div class="meta-item">Updated <strong id="updated-${order.id}">${order.updatedAt}</strong></div>
+        </div>
+      </div>
+    `;
+  }
+
+  // ── SSE ────────────────────────────────────────────────────────
+    function subscribeSSE(orderId, currentStatus) {
+        if (currentStatus === 'DELIVERED') return;
+        if (sseConnections[orderId]) return;
+
+        const es = new EventSource(`${API}/orders/${orderId}/stream`);
+        sseConnections[orderId] = es;
+
+        es.addEventListener('order-status', function(e) {
+        const data = JSON.parse(e.data);
+        handleSSEUpdate(data.orderId, data.status);
         });
     }
 
-    // =========================
-    // CREATE ORDER
-    // =========================
-    $("#btnCreate").click(function () {
+  function handleSSEUpdate(orderId, status) {
+    const cardExists = $('#order-card-' + orderId).length > 0;
 
-        let itemsInput = $("#items").val();
-
-        let payload = {
-            customerId: parseInt($("#customerId").val()),
-            items: itemsInput.split(",").map(i => i.trim())
-        };
-
-        $.ajax({
-            url: "http://localhost:8081/api/orders/create-order",
-            type: "POST",
-            contentType: "application/json",
-            data: JSON.stringify(payload),
-            success: function () {
-                alert("Order created!");
-                loadOrders(); // reload list
-            }
+    if (currentFilter === 'ALL' || status === currentFilter) {
+      if (!cardExists) {
+        // Card belum ada di list (karena filter) → fetch lalu append
+        fetchAndAppendOrder(orderId);
+      } else {
+        updateOrderCard(orderId, status);
+      }
+    } else {
+      // Status tidak match filter → hapus card kalau ada
+      if (cardExists) {
+        $('#order-card-' + orderId).fadeOut(400, function() {
+          $(this).remove();
+          updateCount();
         });
-    });
-
-    // =========================
-    // SSE SUBSCRIBE
-    // =========================
-    function subscribeSSE(orderId) {
-
-        if (eventSources[orderId]) return; // biar ga double
-
-        let eventSource = new EventSource(`http://localhost:8081/orders/${orderId}/stream`);
-
-        eventSource.addEventListener("order-status", function (event) {
-
-            let data = JSON.parse(event.data);
-
-            console.log("Realtime Update:", data);
-
-            // update status di table
-            $(`#order-${data.orderId} .status`).text(data.status);
-
-        });
-
-        eventSource.onerror = function () {
-            console.log("SSE error for order " + orderId);
-            eventSource.close();
-        };
-
-        eventSources[orderId] = eventSource;
+      }
     }
 
-    // =========================
-    // INIT
-    // =========================
-    $(document).ready(function () {
-        loadOrders();
+    // Tutup SSE kalau sudah final
+    if (status === 'DELIVERED') {
+      if (sseConnections[orderId]) {
+        sseConnections[orderId].close();
+        delete sseConnections[orderId];
+      }
+    }
+  }
+
+  function fetchAndAppendOrder(orderId) {
+    $.get(`${API}/orders/${orderId}`, function(res) {
+      if (res.code !== 200 || !res.data) return;
+      $('#orders-list .empty-state').remove();
+      $('#orders-list').prepend(buildOrderCard(res.data));
+      updateCount();
+    });
+  }
+
+  function updateOrderCard(orderId, status) {
+    const steps = ['PENDING','PROCESSING','SHIPPED','DELIVERED'];
+    const currentIdx = steps.indexOf(status);
+
+    const badge = $('#status-' + orderId);
+    badge.removeClass('status-PENDING status-PROCESSING status-SHIPPED status-DELIVERED');
+    badge.addClass('status-' + status).text(status);
+
+    const card = $('#order-card-' + orderId);
+    card.addClass('updating');
+    card.find('.progress-step').each(function(i) {
+      $(this).removeClass('active partial');
+      if (i < currentIdx) $(this).addClass('active');
+      else if (i === currentIdx) $(this).addClass('partial');
     });
 
+    setTimeout(() => card.removeClass('updating'), 1000);
+    $('#updated-' + orderId).text(new Date().toLocaleTimeString());
+    showToast('Order #' + orderId + ' → ' + status);
+  }
+
+  function closeAllSSE() {
+    Object.keys(sseConnections).forEach(id => {
+      sseConnections[id].close();
+      delete sseConnections[id];
+    });
+  }
+
+  function updateCount() {
+    const count = $('#orders-list .order-card').length;
+    $('#order-count').text(count + ' order' + (count !== 1 ? 's' : ''));
+  }
+
+  // ── TOAST ──────────────────────────────────────────────────────
+  function showToast(msg, isError = false) {
+    const toast = $('<div class="toast-msg' + (isError ? ' error' : '') + '">' + msg + '</div>');
+    $('#toast-area').append(toast);
+    setTimeout(() => toast.fadeOut(300, () => toast.remove()), 3500);
+  }
+
+  // ── INIT ───────────────────────────────────────────────────────
+  $(document).ready(function() {
+    loadOrders('ALL');
+  });
 </script>
-
 </body>
 </html>

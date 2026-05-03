@@ -1,10 +1,17 @@
 package com.aurandri.realtimeordertracker.services;
 
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import com.aurandri.realtimeordertracker.CustomHandling.CustomerNotFoundException;
 import com.aurandri.realtimeordertracker.CustomHandling.InvalidStatusTransitionException;
 import com.aurandri.realtimeordertracker.CustomHandling.OrderNotFoundException;
 import com.aurandri.realtimeordertracker.dto.CreateOrderDTO;
-import com.aurandri.realtimeordertracker.dto.OrderRequestDTO;
 import com.aurandri.realtimeordertracker.dto.UpdateOrderDTO;
 import com.aurandri.realtimeordertracker.entities.CustomerEntity;
 import com.aurandri.realtimeordertracker.entities.OrderEntity;
@@ -13,14 +20,8 @@ import com.aurandri.realtimeordertracker.kafka.KafkaProducerService;
 import com.aurandri.realtimeordertracker.kafka.OrderEvent;
 import com.aurandri.realtimeordertracker.repositories.CustomerRepository;
 import com.aurandri.realtimeordertracker.repositories.OrderRepository;
-import org.springframework.transaction.annotation.Transactional;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-import tools.jackson.databind.ObjectMapper;
 
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import tools.jackson.databind.ObjectMapper;
 
 @Service
 public class OrderService {
@@ -44,15 +45,21 @@ public class OrderService {
 
     // Get All Order by Status
     @Transactional(readOnly = true)
-    public List<OrderEntity> getOrderByStatus(OrderRequestDTO orderRequestDTO){
-        return  orderRepository.findByStatus(orderRequestDTO.getOrderStatus());
+    public List<OrderEntity> getOrderByStatus(OrderStatus status) {
+        return orderRepository.findByStatus(status);
+    }
+
+    @Transactional(readOnly = true)
+    public OrderEntity getOrderById(Long id) {
+        return orderRepository.findById(id)
+                .orElseThrow(() -> new OrderNotFoundException(id));
     }
 
     // Create
     @Transactional
     public OrderEntity createOrder(CreateOrderDTO createOrderDTO) {
-        CustomerEntity customer = customerRepository.findById(createOrderDTO.getCustomerId())
-                .orElseThrow(() -> new CustomerNotFoundException(createOrderDTO.getCustomerId()));
+        CustomerEntity customer = customerRepository.findByEmail(createOrderDTO.getCustomerEmail())
+        .orElseThrow(() -> new CustomerNotFoundException("Customer not found: " + createOrderDTO.getCustomerEmail()));
 
         OrderEntity order = new OrderEntity();
         order.setCustomer(customer);

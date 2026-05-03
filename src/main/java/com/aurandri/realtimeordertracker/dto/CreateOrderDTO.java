@@ -1,18 +1,15 @@
 package com.aurandri.realtimeordertracker.dto;
 
+import java.util.List;
+
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
-import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Positive;
 import lombok.Data;
-
-import java.util.List;
-import java.util.UUID;
 
 @Data
 public class CreateOrderDTO {
-    @NotNull
-    private Long customerId;
+    @NotBlank
+    private String customerEmail;
 
     @NotEmpty
     private List<Object> items;
