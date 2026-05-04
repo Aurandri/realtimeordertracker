@@ -129,6 +129,7 @@
       <button class="tab-btn" data-tab="tab-customer">CUSTOMER</button>
     </div>
 
+    <!-- ORDER -->
     <div class="tab-pane active" id="tab-order">
       <div class="card-form">
         <div>
@@ -139,14 +140,19 @@
         <div>
           <label class="form-label">Items</label>
           <div class="items-container" id="items-container" onclick="document.getElementById('item-input').focus()">
-            <input type="text" id="item-input" placeholder="Type item, press Enter..."/>
+            <input type="text" id="item-input" placeholder="Type item, press Enter..." maxlength="50"/>
           </div>
+
+          <small id="error-msg" style="color:red; display:none;">
+            Maksimal 50 karakter
+          </small>
           <div class="hint mt-1">Press Enter or comma to add item</div>
         </div>
         <button class="btn-primary-custom" id="btn-create" onclick="createOrder()">Create Order</button>
       </div>
     </div>
 
+    <!-- CONSUMER -->
     <div class="tab-pane" id="tab-customer">
       <div class="card-form">
         <div>
@@ -209,6 +215,39 @@
     }
   });
 
+  const input = document.getElementById('item-input');
+  const errorMsg = document.getElementById('error-msg');
+  const btnCreate = document.getElementById('btn-create');
+
+  function validateInput() {
+    const isInvalid = input.value.length >= 50;
+
+    if (isInvalid) {
+      errorMsg.style.display = 'block';
+      btnCreate.disabled = true;
+      input.style.border = '1px solid red';
+    } else {
+      errorMsg.style.display = 'none';
+      btnCreate.disabled = false;
+      input.style.border = '';
+    }
+
+    return !isInvalid;
+  }
+
+  // realtime validation
+  input.addEventListener('input', validateInput);
+
+  // optional: guard di function submit
+  function createOrder() {
+    if (!validateInput()) {
+      return; // stop kalau invalid
+    }
+
+    // lanjut proses create order
+    console.log("Order created:", input.value);
+  }
+  
   function addItem(name) {
     if (!name || items.includes(name)) return;
     items.push(name);
@@ -409,7 +448,7 @@ function renderOrders(orders) {
           <span class="status-badge status-${order.status}" id="status-${order.id}">${order.status}</span>
         </div>
         <div class="order-progress">${progressHtml}</div>
-        <div class="order-items">${itemChips}</div>
+        <div class="order-items">Items :${itemChips}</div>
         <div class="order-meta mt-2">
           <div class="meta-item">Created <strong>${order.createdAt}</strong></div>
           <div class="meta-item">Updated <strong id="updated-${order.id}">${order.updatedAt}</strong></div>
