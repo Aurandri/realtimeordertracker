@@ -16,11 +16,13 @@ Frontend is served directly by the Spring Boot application for simplicity.
 
 ```bash
 git clone https://github.com/Aurandri/realtimeordertracker
+```
+```bash
 cd realtimeordertracker
 ```
 
 ### 2. Setup env
-
+Serves to duplicate the environment template file into an active configuration file.
 ```bash
 cp .env.example .env
 ```
@@ -48,6 +50,7 @@ Services communicate via Docker network:
 
 * backend → postgres
 * backend → kafka
+* backend → kafka-ui (using provectuslabs/kafka-ui:latest to see kafka messages via UI)
 
 Example:
 
