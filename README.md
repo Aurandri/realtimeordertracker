@@ -52,9 +52,10 @@ Services communicate via Docker network:
 * backend → kafka
 * backend → kafka-ui (using provectuslabs/kafka-ui:latest to see kafka messages via UI)
 
-Example:
+DB URL Example:
 
 ```
+jdbc:postgresql://postgres:5432/[Your_DB_Name]
 jdbc:postgresql://postgres:5432/realtimeordertrackerdb
 ```
 
