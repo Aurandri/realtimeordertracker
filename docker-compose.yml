@@ -1,3 +1,5 @@
+version: "3.9"
+
 services:
   backend:
     build: .
@@ -7,9 +9,38 @@ services:
     environment:
       APP_PROFILE: ${APP_PROFILE:-dev}
       KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+
+      # PostgreSQL Config
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/order_db
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: postgres
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+      SPRING_JPA_DATABASE_PLATFORM: org.hibernate.dialect.PostgreSQLDialect
+
     depends_on:
       kafka-init:
         condition: service_completed_successfully
+      postgres:
+        condition: service_healthy
+    networks:
+      - order-network
+
+  postgres:
+    image: postgres:16
+    container_name: order-postgres
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: order_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d order_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
     networks:
       - order-network
 
@@ -47,7 +78,15 @@ services:
     depends_on:
       kafka:
         condition: service_healthy
-    entrypoint: sh -c "/opt/kafka/bin/kafka-topics.sh --bootstrap-server kafka:9092 --create --topic order-events --partitions 3 --replication-factor 1 --if-not-exists && echo 'Topic order-events created successfully'"
+    entrypoint: >
+      sh -c "
+      /opt/kafka/bin/kafka-topics.sh --bootstrap-server kafka:9092
+      --create --topic order-events
+      --partitions 3
+      --replication-factor 1
+      --if-not-exists &&
+      echo 'Topic order-events created successfully'
+      "
     restart: "no"
     networks:
       - order-network
@@ -71,4 +110,4 @@ networks:
     driver: bridge
 
 volumes:
-  h2_data:
+  postgres_data:
