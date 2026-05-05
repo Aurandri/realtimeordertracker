@@ -3,7 +3,6 @@ version: "3.9"
 services:
   backend:
     build: .
-    container_name: order-backend
     ports:
       - "${BACKEND_PORT:-8081}:8080"
     environment:
@@ -11,10 +10,10 @@ services:
       KAFKA_BOOTSTRAP_SERVERS: kafka:9092
 
       # PostgreSQL Config
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/realtimeordertrackerdb
-      SPRING_DATASOURCE_USERNAME: postgres
-      SPRING_DATASOURCE_PASSWORD: postgres
-      SPRING_JPA_HIBERNATE_DDL_AUTO: create-drop
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-realtimeordertrackerdb}
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-postgres}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      SPRING_JPA_HIBERNATE_DDL_AUTO: ${DDL_AUTO:-update}
       SPRING_JPA_DATABASE_PLATFORM: org.hibernate.dialect.PostgreSQLDialect
 
     depends_on:
@@ -27,17 +26,16 @@ services:
 
   postgres:
     image: postgres:16
-    container_name: realtimeordertrackerdb-postgres
     ports:
-      - "5432:5432"
+      - "${POSTGRES_PORT:-5432}:5432"
     environment:
-      POSTGRES_DB: realtimeordertrackerdb
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: ${POSTGRES_DB:-realtimeordertrackerdb}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d realtimeordertrackerdb"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-realtimeordertrackerdb}"]
       interval: 5s
       timeout: 5s
       retries: 10
@@ -46,9 +44,8 @@ services:
 
   kafka:
     image: apache/kafka:4.0.0
-    container_name: kafka-real-time-order-tracker
     ports:
-      - "9092:9092"
+      - "${KAFKA_PORT:-9092}:9092"
     environment:
       KAFKA_NODE_ID: 1
       KAFKA_PROCESS_ROLES: broker,controller
@@ -74,18 +71,17 @@ services:
 
   kafka-init:
     image: apache/kafka:4.0.0
-    container_name: kafka-init
     depends_on:
       kafka:
         condition: service_healthy
     entrypoint: >
       sh -c "
       /opt/kafka/bin/kafka-topics.sh --bootstrap-server kafka:9092
-      --create --topic order-events
-      --partitions 3
+      --create --topic ${KAFKA_TOPIC:-order-events}
+      --partitions ${KAFKA_PARTITIONS:-3}
       --replication-factor 1
       --if-not-exists &&
-      echo 'Topic order-events created successfully'
+      echo 'Topic created successfully'
       "
     restart: "no"
     networks:
@@ -93,13 +89,12 @@ services:
 
   kafka-ui:
     image: provectuslabs/kafka-ui:latest
-    container_name: kafka-ui
     ports:
       - "${KAFKA_UI_PORT:-8080}:8080"
     depends_on:
       - kafka
     environment:
-      KAFKA_CLUSTERS_0_NAME: local-kraft
+      KAFKA_CLUSTERS_0_NAME: ${KAFKA_CLUSTER_NAME:-local}
       KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:9092
       DYNAMIC_CONFIG_ENABLED: "true"
     networks:
