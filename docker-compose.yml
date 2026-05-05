@@ -11,10 +11,10 @@ services:
       KAFKA_BOOTSTRAP_SERVERS: kafka:9092
 
       # PostgreSQL Config
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/order_db
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/realtimeordertrackerdb
       SPRING_DATASOURCE_USERNAME: postgres
       SPRING_DATASOURCE_PASSWORD: postgres
-      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+      SPRING_JPA_HIBERNATE_DDL_AUTO: create-drop
       SPRING_JPA_DATABASE_PLATFORM: org.hibernate.dialect.PostgreSQLDialect
 
     depends_on:
@@ -27,17 +27,17 @@ services:
 
   postgres:
     image: postgres:16
-    container_name: order-postgres
+    container_name: realtimeordertrackerdb-postgres
     ports:
       - "5432:5432"
     environment:
-      POSTGRES_DB: order_db
+      POSTGRES_DB: realtimeordertrackerdb
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d order_db"]
+      test: ["CMD-SHELL", "pg_isready -U postgres -d realtimeordertrackerdb"]
       interval: 5s
       timeout: 5s
       retries: 10
