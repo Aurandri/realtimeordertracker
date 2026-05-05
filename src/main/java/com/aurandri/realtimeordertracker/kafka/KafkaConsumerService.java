@@ -1,18 +1,19 @@
 package com.aurandri.realtimeordertracker.kafka;
 
-import com.aurandri.realtimeordertracker.controller.SseController;
-import com.aurandri.realtimeordertracker.entities.OrderEntity;
-import com.aurandri.realtimeordertracker.entities.OrderStatus;
-import com.aurandri.realtimeordertracker.repositories.OrderRepository;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.annotation.KafkaListener;
-import org.springframework.kafka.support.Acknowledgment;
 import org.springframework.kafka.support.KafkaHeaders;
 import org.springframework.messaging.handler.annotation.Header;
 import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import com.aurandri.realtimeordertracker.controller.SseController;
+import com.aurandri.realtimeordertracker.entities.OrderEntity;
+import com.aurandri.realtimeordertracker.entities.OrderStatus;
+import com.aurandri.realtimeordertracker.repositories.OrderRepository;
+
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @Service
