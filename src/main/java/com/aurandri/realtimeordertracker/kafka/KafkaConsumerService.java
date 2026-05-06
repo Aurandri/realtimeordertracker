@@ -41,11 +41,9 @@ public class KafkaConsumerService {
         try {
             processEvent(event);
         } catch (Exception ex) {
-            // No silent failures — selalu log error dengan detail
+            // No silent failures - Giving back any log/info
             log.error("Failed to process event orderId={}, status={}, partition={}, offset={}, error={}",
                     event.getOrderId(), event.getCurrentStatus(), partition, offset, ex.getMessage(), ex);
-            // Tidak rethrow — biar tidak stuck, event tetap di-acknowledge
-            // Untuk production: bisa tambah Dead Letter Topic di sini
         }
     }
 
